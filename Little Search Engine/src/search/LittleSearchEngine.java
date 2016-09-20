@@ -11,39 +11,35 @@ import java.util.*;
  * @author Sesh Venugopal
  * 
  */
-class Driver
+
+
+/*class Driver
 {
 	public static void main(String args[]) throws FileNotFoundException
 	{
 		LittleSearchEngine search = new LittleSearchEngine(); 
-		//System.out.print(search.getKeyWord("hello"));
-			
-		//search.makeIndex("docs.txt", "noisewords.txt");
-		ArrayList<Occurrence> s1 = new ArrayList<Occurrence>();
+		search.makeIndex("docs.txt","noisewords.txt");
+    
+		HashMap<String,ArrayList<Occurrence>> add = search.keywordsIndex; 
 		
-		s1.add( new Occurrence("swag.txt",2));
 		
-		s1.add(new Occurrence("swag.txt",12));
-		search.insertLastOccurrence(s1); 
+		for(Map.Entry<String, ArrayList<Occurrence>> entry : add.entrySet())
+		{
+			//Here we get the occurrence value 
+			String key = entry.getKey();  
+			ArrayList<Occurrence> s1 = entry.getValue(); 
 		
-		s1.add(new Occurrence("rutgers.txt",5)); 
-		search.insertLastOccurrence(s1); 
-		
-		s1.add(new Occurrence("pcti.txt",7)); 
-		search.insertLastOccurrence(s1); 
-	
-		s1.add(new Occurrence("words.txt",13)); 
-		search.insertLastOccurrence(s1); 
-		
-		s1.add(new Occurrence("random.txt",1)); 
-		search.insertLastOccurrence(s1);
-		
-	}  
-	
-	
-	
+			System.out.println("key:" + key);
+			//System.out.println("Value:" + s1);
+	    }  
+	   
+		System.out.println("");
+		ArrayList<String> arrList = search.top5search("time", "indeed"); 
+		System.out.println(arrList);
+   }
 }
-
+*/
+ 
 class Occurrence {
 	/**
 	 * Document in which a keyword occurs.
@@ -218,9 +214,12 @@ public class LittleSearchEngine {
 			{
 				arrList = new ArrayList<Occurrence>();
 				arrList.add(s1);
-				keywordsIndex.put(key, arrList); 
 				
 				insertLastOccurrence(arrList);
+				
+				keywordsIndex.put(key, arrList); 
+				
+				
 			}
 			
 			//otherwise the word is within the keywordsIndex hashTable 
@@ -231,7 +230,7 @@ public class LittleSearchEngine {
 			
 				//then we send it to insertLastOccurrence
 				insertLastOccurrence(arrList);
-			}
+			}  
 			
 		}
 			
@@ -256,6 +255,12 @@ public class LittleSearchEngine {
 		String s1 = word.toLowerCase(); 
 		int length = s1.length()-1;  
 		
+		if(length==0)
+		{
+			return null; 
+		}
+		
+		//if the word contains a number
 		if(s1.matches(".*\\d.*"))  
 		{
 			return null; 
@@ -268,7 +273,10 @@ public class LittleSearchEngine {
 			length--; 
 		}
 	
-		
+		if(length==0)
+		{
+			return null; 
+		}
 		//Means there is punctuations in the middle of the word 
 		if(s1.contains(".") || s1.contains(",") || s1.contains("?") || s1.contains(":") || s1.contains(";") || s1.contains("!"))
 		{
@@ -301,7 +309,7 @@ public class LittleSearchEngine {
 	 * @return Sequence of mid point indexes in the input list checked by the binary search process,
 	 *         null if the size of the input list is 1. This returned array list is only used to test
 	 *         your code - it is not used elsewhere in the program.
-	 */ 
+	 */
 	public ArrayList<Integer> insertLastOccurrence(ArrayList<Occurrence> occs) 
 	{
 		// COMPLETE THIS METHOD
@@ -321,7 +329,7 @@ public class LittleSearchEngine {
 	private ArrayList<Integer> binarySearch(ArrayList<Occurrence> occs) 
 	 {
 		//We get the last value of the arrayList which is the Occurrence object which we are going to properly sort 
-		 Occurrence s1 = occs.get(occs.size()-1); 
+		Occurrence s1 = occs.get(occs.size()-1); 
 		 occs.remove(occs.size()-1);
 		 
 		 int size = occs.size(); 
@@ -331,7 +339,7 @@ public class LittleSearchEngine {
 	     ArrayList<Integer> arrList = new ArrayList<Integer>(); 
 	      
 	     //if the high is less than 0 then we add to front 
-	     
+	      
 	     //if the low is equal to the size then add to rear or the low is greater than the largest index (size()-1) 
 	     
 	     //general case : if the last middle is greater than the point we are trying to add then mid+1 if it is less than then we add at that index
@@ -342,6 +350,11 @@ public class LittleSearchEngine {
 	             middle=(low + high) / 2;
 	             arrList.add(middle); 
 	             
+	             if(occs.get(middle).frequency == s1.frequency)
+	             {
+	            	break;
+	             }
+	             
 	             if(occs.get(middle).frequency < s1.frequency) {
 	                 high = middle - 1;
 	             }
@@ -349,7 +362,12 @@ public class LittleSearchEngine {
 	                 low = middle + 1;
 	             }
 	      }
-                 
+           
+         if(occs.get(middle).frequency == s1.frequency)
+         {
+        	occs.add(middle,s1); 
+         }
+         
         //we add to the front 
         if(high<0)
         {
@@ -376,7 +394,7 @@ public class LittleSearchEngine {
         }
          
          return arrList; 
-	  }
+ 	  }
 	
 	
 	/**
@@ -401,8 +419,128 @@ public class LittleSearchEngine {
 		//get the two arrayLists and sort them in order from greatest to least 
 		//get the first 5 items and output them into the arrayList. If two of the same document exist ignore the second. 
 		
+		ArrayList<Occurrence> words = new ArrayList<Occurrence>(); 
 		
+		//This is our reference pointer for our first keyword 
+		ArrayList<Occurrence> arrList1 = new ArrayList<Occurrence>(); 
 		
-		return null;
+		//we assign our reference to the matching value(arrayList)
+		arrList1=keywordsIndex.get(kw1); 
+		 
+		//We add the entire arrayList onto the main names ArrayList (it is already in descending order) 
+		int num = 0; 
+		while(num<arrList1.size())
+		{
+			words.add(arrList1.get(num)); 
+			insertLastOccurrence(words);
+			num++; 
+		}
+	
+		//This is our reference pointer for our second keyword
+		ArrayList<Occurrence> arrList2 = new ArrayList<Occurrence>(); 
+
+		//we assign our reference to the matching value(arrayList)
+		arrList2=keywordsIndex.get(kw2); 
+		
+		//we iterate through keyword 2's arrayList and we insert it to our words arrayList
+		num=0;
+		while(num<arrList2.size())
+		{
+			//we add the word to the end and do an insertLastOccurrence on it 
+			words.add(arrList2.get(num)); 
+			insertLastOccurrence(words); 
+			num++;
+		}
+		
+	
+		
+		//I am changing the order so that if two documents have the same frequency then kw1 is before kw2 
+		int iterator = 0; 
+		while(iterator<words.size()-1)
+		{	//I am checking all but the second to last item in the words arrayList if it's frequecy is equal to the next item's frequency 
+			if(words.get(iterator).frequency==words.get(iterator+1).frequency)
+			{	//the item in iterator + 1 is located in the arrayList for keyword 1 and the item in iterator is located in arrList 2 
+			    Occurrence one = words.get(iterator+1); 
+			    Occurrence two = words.get(iterator);
+			   
+			    boolean boo=false;
+			    for(int x=0; x<arrList1.size();x++)
+			    {
+			    	if(arrList1.get(x)==one)
+			    	{
+			    		boo=true;
+			    		break;
+			    	}
+
+			    }
+			    boolean boo2=false;
+			    for(int x=0; x<arrList2.size();x++)
+			    {
+			    	if(arrList2.get(x)==two)
+			    	{
+			    		boo2=true;
+			    		break;
+			    	}
+			    }
+ 
+			    
+				if(boo && boo2)
+			    {
+			    	Occurrence remove = words.get(iterator+1); 
+			    	words.remove(iterator+1); 
+			    	words.add(iterator, remove);
+			    }
+			}			
+			iterator++; 		
+		}
+		
+		//what I am using to store the name of the documents and what I am going to return
+		ArrayList<String> namesOfDocs = new ArrayList<String>(); 
+		namesOfDocs.add(words.get(0).document);
+		
+		int iterate = 1; 
+		//if the occurrence objects are a size of less than 5 then we 
+	if(words.size()<5)
+	{
+	     while(iterate<words.size())
+    	 {
+		   if(namesOfDocs.contains(words.get(iterate).document))
+		   {
+			 words.remove(iterate);
+			 iterate=iterate-1; 
+		   }
+		   else 
+		   {
+			 namesOfDocs.add(words.get(iterate).document);
+		   }
+		
+			iterate++;
+		 }
+			 
 	}
-} 
+	
+	else 
+	{
+		while(iterate<words.size() && namesOfDocs.size()!=5)
+		{
+			if(namesOfDocs.contains(words.get(iterate).document))
+			{
+			  words.remove(iterate);
+			  iterate=iterate-1; 
+			}
+			else 
+		    {
+		   	  namesOfDocs.add(words.get(iterate).document);
+		    }
+			
+			iterate++;			
+		}
+	}
+		
+	
+		return namesOfDocs;
+		
+	
+
+	}
+  }	
